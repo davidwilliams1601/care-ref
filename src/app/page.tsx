@@ -8,13 +8,44 @@ import Link from "next/link";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Image from "next/image";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 
 export default function WelcomePage() {
   const [year, setYear] = React.useState<number | null>(null);
+  const { user, userProfile, loading } = useAuth();
+  const router = useRouter();
 
   React.useEffect(() => {
     setYear(new Date().getFullYear());
   }, []);
+
+  // Redirect authenticated users to their dashboard
+  React.useEffect(() => {
+    if (!loading && user && userProfile) {
+      const redirectPath = userProfile.userType === 'agency' ? '/agency' : '/dashboard';
+      router.push(redirectPath);
+    }
+  }, [user, userProfile, loading, router]);
+
+  // Show loading while checking auth
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // If user is authenticated, show loading while redirecting
+  if (user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
