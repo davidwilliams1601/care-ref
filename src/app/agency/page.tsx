@@ -1,3 +1,4 @@
+"use client";
 
 import * as React from "react";
 import { Header } from "@/components/header";
@@ -5,6 +6,7 @@ import { AgencyDashboardContent } from "@/components/agency/agency-dashboard-con
 import { Suspense } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 function AgencyDashboardFallback() {
   return (
@@ -39,7 +41,8 @@ function AgencyDashboardFallback() {
 export default function AgencyDashboard() {
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <ProtectedRoute requireUserType="agency">
+      <div className="flex flex-col min-h-screen bg-background">
       <Header />
       <main className="flex-1 container mx-auto p-4 md:p-8">
         <Suspense fallback={<AgencyDashboardFallback />}>
@@ -47,5 +50,6 @@ export default function AgencyDashboard() {
         </Suspense>
       </main>
     </div>
+    </ProtectedRoute>
   );
 }

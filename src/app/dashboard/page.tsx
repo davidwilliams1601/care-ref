@@ -13,6 +13,7 @@ import type { Reference, ReferenceRequest } from "@/types";
 import { ReferenceList } from "@/components/dashboard/reference-list";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ReferenceRequestList } from "@/components/dashboard/reference-request-list";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 export default function WorkerDashboard() {
   const [references, setReferences] = React.useState<Reference[]>(mockReferences);
@@ -23,7 +24,8 @@ export default function WorkerDashboard() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <ProtectedRoute requireUserType="worker">
+      <div className="flex flex-col min-h-screen bg-background">
       <Header />
       <main className="flex-1 container mx-auto p-4 md:p-8">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
@@ -73,5 +75,6 @@ export default function WorkerDashboard() {
         </Tabs>
       </main>
     </div>
+    </ProtectedRoute>
   );
 }
