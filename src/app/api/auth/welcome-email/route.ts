@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function POST(request: NextRequest) {
   try {
     const { email, displayName, userType } = await request.json();
@@ -13,6 +11,18 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Check if Resend API key is configured
+    if (!process.env.RESEND_API_KEY) {
+      console.warn('RESEND_API_KEY not configured - skipping welcome email');
+      return NextResponse.json({
+        success: true,
+        message: 'Email sending skipped (API key not configured)'
+      });
+    }
+
+    // Initialize Resend client at runtime
+    const resend = new Resend(process.env.RESEND_API_KEY);
 
     const userTypeLabel = userType === 'worker' ? 'Care Worker' : 'Agency';
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9002';
