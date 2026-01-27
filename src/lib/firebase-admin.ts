@@ -14,13 +14,23 @@ let adminAuth: Auth;
 // Only initialize on server-side
 if (typeof window === 'undefined') {
   if (!getApps().length) {
+    let privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY || '';
+
+    // Handle different private key formats
+    // Remove quotes if present
+    if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
+      privateKey = privateKey.slice(1, -1);
+    }
+
+    // Replace escaped newlines with actual newlines
+    privateKey = privateKey.replace(/\\n/g, '\n');
+
     // Initialize with service account credentials
     adminApp = initializeApp({
       credential: cert({
         projectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
         clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
-        // Private key needs to have escaped newlines replaced
-        privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        privateKey: privateKey,
       }),
     });
   } else {
