@@ -63,8 +63,12 @@ export function ReferenceSubmissionForm({ request: initialRequest }: ReferenceSu
 
     setIsSubmitting(true);
     try {
+      // TEMPORARY: AI summarization disabled due to quota limits
       // Generate AI summary of the reference
-      const { summary } = await summarizeReference({ referenceText: values.referenceText });
+      // const { summary } = await summarizeReference({ referenceText: values.referenceText });
+
+      // Use placeholder summary for now
+      const summary = `Reference provided for ${request.jobTitle} position at ${request.employerName}. Employment period: ${values.startDate.toLocaleDateString()} to ${values.endDate?.toLocaleDateString() || 'Present'}.`;
 
       // Submit reference to Firestore
       const result = await submitReference({
@@ -84,7 +88,7 @@ export function ReferenceSubmissionForm({ request: initialRequest }: ReferenceSu
 
       toast({
           title: "Reference Submitted!",
-          description: "Thank you for providing a reference. It has been summarized and stored securely.",
+          description: "Thank you for providing a reference. It has been stored securely.",
       });
       setIsSubmitted(true);
 
@@ -93,7 +97,7 @@ export function ReferenceSubmissionForm({ request: initialRequest }: ReferenceSu
       toast({
         variant: "destructive",
         title: "Submission Failed",
-        description: error instanceof Error ? error.message : "Could not submit or summarize the reference. Please try again.",
+        description: error instanceof Error ? error.message : "Could not submit the reference. Please try again.",
       });
     } finally {
         setIsSubmitting(false);
