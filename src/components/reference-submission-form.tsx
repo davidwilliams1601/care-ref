@@ -24,7 +24,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import type { ReferenceRequest } from "@/types";
 import { summarizeReference } from "@/ai/flows/summarize-reference";
-import { mockRequests } from "@/lib/mock-data";
+import { submitReference } from "@/app/actions/submit-reference";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -63,22 +63,23 @@ export function ReferenceSubmissionForm({ request: initialRequest }: ReferenceSu
 
     setIsSubmitting(true);
     try {
-      // In a real app, this would securely submit the reference
-      // to your backend. Here, we'll call the AI flow and then
-      // update the mock data to simulate the process.
-      
+      // Generate AI summary of the reference
       const { summary } = await summarizeReference({ referenceText: values.referenceText });
 
-      // Find the request in our mock data and update it
-      const requestIndex = mockRequests.findIndex(r => r.id === request.id);
-      if (requestIndex !== -1) {
-        mockRequests[requestIndex] = {
-          ...mockRequests[requestIndex],
-          ...values,
-          summary,
-          status: 'Completed',
-          dateCompleted: new Date(),
-        };
+      // Submit reference to Firestore
+      const result = await submitReference({
+        requestId: request.id,
+        workerId: request.workerId,
+        refereeName: values.refereeName,
+        refereeJobTitle: values.refereeJobTitle,
+        startDate: values.startDate.toISOString(),
+        endDate: values.endDate?.toISOString(),
+        referenceText: values.referenceText,
+        summary,
+      });
+
+      if (!result.success) {
+        throw new Error(result.message);
       }
 
       toast({
@@ -92,7 +93,7 @@ export function ReferenceSubmissionForm({ request: initialRequest }: ReferenceSu
       toast({
         variant: "destructive",
         title: "Submission Failed",
-        description: "Could not submit or summarize the reference. Please try again.",
+        description: error instanceof Error ? error.message : "Could not submit or summarize the reference. Please try again.",
       });
     } finally {
         setIsSubmitting(false);

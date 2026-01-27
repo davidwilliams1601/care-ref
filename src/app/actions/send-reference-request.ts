@@ -3,8 +3,9 @@
 
 import { z } from 'zod';
 import { Resend } from 'resend';
-import { mockRequests } from '@/lib/mock-data';
 import type { ReferenceRequest } from '@/types';
+import { adminDb } from '@/lib/firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -21,21 +22,33 @@ export async function sendReferenceRequest(
   try {
     const validatedData = sendReferenceRequestSchema.parse(values);
 
-    const newRequestObject: ReferenceRequest = {
-      ...validatedData,
-      id: `req-${Date.now()}`,
+    // Generate unique ID for the request
+    const requestId = `req-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+
+    // Create reference to user's requests sub-collection
+    const requestRef = adminDb
+      .collection('users')
+      .doc(validatedData.workerId)
+      .collection('requests')
+      .doc(requestId);
+
+    // Prepare request data for Firestore
+    const requestData = {
+      workerId: validatedData.workerId,
+      employerName: validatedData.employerName,
+      employerEmail: validatedData.employerEmail,
+      jobTitle: validatedData.jobTitle,
       status: 'Sent',
-      dateRequested: new Date(),
+      dateRequested: FieldValue.serverTimestamp(),
       dateCompleted: null,
     };
-    
-    // In a real app, you'd add this to your database.
-    // We are pushing to the mock data array to simulate this.
-    mockRequests.unshift(newRequestObject);
+
+    // Write to Firestore
+    await requestRef.set(requestData);
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9002';
-    const referenceLink = `${baseUrl}/reference/${newRequestObject.id}`;
-    
+    const referenceLink = `${baseUrl}/reference/${requestId}`;
+
     const { data, error } = await resend.emails.send({
       from: 'RefVault <onboarding@resend.dev>',
       to: [validatedData.employerEmail],

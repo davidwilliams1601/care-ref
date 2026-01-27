@@ -22,9 +22,10 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { sendReferenceRequest } from "@/app/actions/send-reference-request";
+import { useAuth } from "@/contexts/AuthContext";
 
 const formSchema = z.object({
-  workerId: z.string().default("worker-123"), // This would be the logged in user's ID
+  workerId: z.string(),
   employerName: z.string().min(2, "Employer name is required."),
   employerEmail: z.string().email("Please enter a valid email address."),
   jobTitle: z.string().min(2, "Job title is required."),
@@ -33,12 +34,13 @@ const formSchema = z.object({
 export function ReferenceRequestForm() {
   const router = useRouter();
   const { toast } = useToast();
+  const { userProfile } = useAuth();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      workerId: "worker-123",
+      workerId: userProfile?.uid || "",
       employerName: "",
       employerEmail: "",
       jobTitle: "",
@@ -46,9 +48,24 @@ export function ReferenceRequestForm() {
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    if (!userProfile?.uid) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "You must be logged in to request a reference.",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
-    
-    const result = await sendReferenceRequest(values);
+
+    // Ensure workerId is set to current user
+    const requestData = {
+      ...values,
+      workerId: userProfile.uid,
+    };
+
+    const result = await sendReferenceRequest(requestData);
 
     setIsSubmitting(false);
 
@@ -58,7 +75,6 @@ export function ReferenceRequestForm() {
         description: `Your reference request has been sent to ${values.employerName}.`,
       });
       router.push("/dashboard");
-      router.refresh(); // Refresh the page to show the new request
     } else {
        toast({
         variant: "destructive",
