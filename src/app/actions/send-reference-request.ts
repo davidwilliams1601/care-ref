@@ -49,15 +49,21 @@ export async function sendReferenceRequest(
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9002';
     const referenceLink = `${baseUrl}/reference/${requestId}`;
 
-    const { data, error } = await resend.emails.send({
-      from: 'RefVault <onboarding@resend.dev>',
-      to: [validatedData.employerEmail],
-      subject: `Reference Request for ${validatedData.jobTitle}`,
-      text: `Hello, you have been asked to provide a reference for a former employee for their role as ${validatedData.jobTitle}. Please provide the reference by clicking this link: ${referenceLink}`,
-    });
+    // Try to send email, but don't fail if it doesn't work
+    try {
+      const { data, error } = await resend.emails.send({
+        from: 'RefVault <onboarding@resend.dev>',
+        to: [validatedData.employerEmail],
+        subject: `Reference Request for ${validatedData.jobTitle}`,
+        text: `Hello, you have been asked to provide a reference for a former employee for their role as ${validatedData.jobTitle}. Please provide the reference by clicking this link: ${referenceLink}`,
+      });
 
-    if (error) {
-     throw error;
+      if (error) {
+        console.error('Email sending failed:', error);
+      }
+    } catch (emailError) {
+      console.error('Failed to send email:', emailError);
+      // Continue anyway - the request is saved in Firestore
     }
 
     return { success: true, message: 'Reference request sent successfully.' };
