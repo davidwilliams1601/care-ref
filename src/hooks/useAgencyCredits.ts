@@ -9,7 +9,6 @@ interface UseAgencyCreditsResult {
   loading: boolean;
   error: string | null;
   deductCredit: () => Promise<void>;
-  addCredits: (amount: number) => Promise<void>;
 }
 
 /**
@@ -88,34 +87,10 @@ export function useAgencyCredits(userId: string | undefined): UseAgencyCreditsRe
     }
   };
 
-  /**
-   * Add credits to the agency's balance
-   */
-  const addCredits = async (amount: number): Promise<void> => {
-    if (!userId) {
-      throw new Error('User not authenticated');
-    }
-
-    if (amount <= 0) {
-      throw new Error('Amount must be positive');
-    }
-
-    try {
-      const userRef = doc(db, 'users', userId);
-      await updateDoc(userRef, {
-        credits: increment(amount),
-      });
-    } catch (err) {
-      console.error('Error adding credits:', err);
-      throw new Error('Failed to add credits');
-    }
-  };
-
   return {
     credits,
     loading,
     error,
     deductCredit,
-    addCredits,
   };
 }

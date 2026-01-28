@@ -24,22 +24,21 @@ export function AgencyDashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { userProfile } = useAuth();
-  const { credits, loading, error, deductCredit, addCredits } = useAgencyCredits(userProfile?.uid);
+  const { credits, loading, error, deductCredit } = useAgencyCredits(userProfile?.uid);
   const { toast } = useToast();
+  const hasShownSuccessToast = React.useRef(false);
 
   React.useEffect(() => {
-    if (searchParams.get("purchase") === "success") {
-      // Add credit after successful purchase
-      addCredits(1).then(() => {
-        toast({
-          title: "Purchase Successful!",
-          description: "You have purchased 1 credit for £20. It has been added to your account.",
-        });
+    if (searchParams.get("purchase") === "success" && !hasShownSuccessToast.current) {
+      hasShownSuccessToast.current = true;
+      toast({
+        title: "Payment Successful!",
+        description: "Your credit is being added to your account. It will appear within a few seconds.",
       });
       // Clean the URL
       router.replace('/agency', { scroll: false });
     }
-  }, [searchParams, toast, router, addCredits]);
+  }, [searchParams, toast, router]);
 
 
   const handlePurchase = () => {
