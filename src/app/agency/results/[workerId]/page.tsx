@@ -34,9 +34,15 @@ export default function AgencyResultsPage({ params }: { params: { workerId: stri
   const [completedReferences, setCompletedReferences] = React.useState<ReferenceRequest[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const hasRecordedView = React.useRef(false);
 
   React.useEffect(() => {
     const fetchReferences = async () => {
+      if (!userProfile?.uid) {
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       setError(null);
 
@@ -54,17 +60,19 @@ export default function AgencyResultsPage({ params }: { params: { workerId: stri
 
         setCompletedReferences(referencesWithDates);
 
-        // Record this worker view for the agency
-        if (userProfile?.uid && result.references.length > 0) {
-          // Get worker name from first reference (employer name or use worker ID)
+        // Record this worker view for the agency (only once)
+        if (!hasRecordedView.current && result.references.length > 0) {
+          hasRecordedView.current = true;
           const workerName = `Worker ${workerId.substring(0, 8)}...`;
 
-          await recordWorkerView(
+          recordWorkerView(
             userProfile.uid,
             workerId,
             workerName,
             result.references.length
-          );
+          ).catch((err) => {
+            console.error('Failed to record worker view:', err);
+          });
         }
       } else {
         setError(result.error || 'Failed to load references');
@@ -74,7 +82,11 @@ export default function AgencyResultsPage({ params }: { params: { workerId: stri
     };
 
     fetchReferences();
-  }, [workerId, userProfile?.uid]);
+    // Reset the ref when workerId changes
+    return () => {
+      hasRecordedView.current = false;
+    };
+  }, [workerId]);
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
