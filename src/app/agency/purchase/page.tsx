@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 
-export default function PurchasePage() {
+function PurchaseContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { userProfile } = useAuth();
@@ -157,5 +157,23 @@ export default function PurchasePage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function PurchasePage() {
+  return (
+    <React.Suspense fallback={
+      <div className="flex flex-col min-h-screen bg-background">
+        <Header />
+        <main className="flex-1 container mx-auto p-4 md:p-8 flex justify-center items-center">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading...</p>
+          </div>
+        </main>
+      </div>
+    }>
+      <PurchaseContent />
+    </React.Suspense>
   );
 }
