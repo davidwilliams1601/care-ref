@@ -23,6 +23,38 @@ export default function AdminPage() {
               <CardHeader>
                 <div className="flex items-center gap-2">
                   <Database className="h-5 w-5" />
+                  <CardTitle>Admin Dashboard</CardTitle>
+                </div>
+                <CardDescription>
+                  View platform analytics, manage users, and monitor payments
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="text-sm text-muted-foreground">
+                    <p>Access the comprehensive admin panel:</p>
+                    <ul className="list-disc list-inside mt-1 space-y-1">
+                      <li>User management & search</li>
+                      <li>Reference tracking</li>
+                      <li>Payment history</li>
+                      <li>Agency insights</li>
+                      <li>Credit adjustments</li>
+                    </ul>
+                  </div>
+                  <Button asChild className="w-full">
+                    <Link href="/admin/dashboard">
+                      Open Dashboard
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Database className="h-5 w-5" />
                   <CardTitle>Worker ID Migration</CardTitle>
                 </div>
                 <CardDescription>
