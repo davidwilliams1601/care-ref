@@ -23,11 +23,19 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { sendReferenceRequest } from "@/app/actions/send-reference-request";
 import { useAuth } from "@/contexts/AuthContext";
+import { validateCorporateEmail, getEmailValidationHelperText } from "@/lib/email-validation";
 
 const formSchema = z.object({
   workerId: z.string(),
   employerName: z.string().min(2, "Employer name is required."),
-  employerEmail: z.string().email("Please enter a valid email address."),
+  employerEmail: z.string()
+    .email("Please enter a valid email address.")
+    .refine((email) => {
+      const validation = validateCorporateEmail(email);
+      return validation.valid;
+    }, {
+      message: "Please use a corporate email address. Personal emails (Gmail, Yahoo, etc.) are not accepted for references.",
+    }),
   jobTitle: z.string().min(2, "Job title is required."),
 });
 
@@ -120,10 +128,14 @@ export function ReferenceRequestForm() {
                   <FormItem>
                     <FormLabel>Employer Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. manager@care-provider.com" {...field} />
+                      <Input
+                        placeholder="e.g. manager@careuk.com"
+                        type="email"
+                        {...field}
+                      />
                     </FormControl>
                     <FormDescription>
-                      We will send the reference request to this email.
+                      Use their official work email. Personal emails (Gmail, Yahoo, etc.) are not accepted to ensure reference authenticity.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

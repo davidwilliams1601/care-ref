@@ -7,6 +7,8 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Search, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { hasAgencyViewedWorker } from "@/app/actions/agency-viewed-workers";
+import { useAuth } from "@/contexts/AuthContext";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -32,6 +34,7 @@ interface VerifyReferenceFormProps {
 export function VerifyReferenceForm({ onVerify, currentCredits }: VerifyReferenceFormProps) {
   const { toast } = useToast();
   const router = useRouter();
+  const { userProfile } = useAuth();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -42,11 +45,11 @@ export function VerifyReferenceForm({ onVerify, currentCredits }: VerifyReferenc
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    if (currentCredits <= 0) {
+    if (!userProfile?.uid) {
       toast({
         variant: "destructive",
-        title: "No Credits Remaining",
-        description: `Please purchase more credits to verify references.`,
+        title: "Error",
+        description: "You must be logged in to verify references.",
       });
       return;
     }
@@ -54,13 +57,35 @@ export function VerifyReferenceForm({ onVerify, currentCredits }: VerifyReferenc
     setIsSubmitting(true);
 
     try {
-      // Deduct credit
-      await onVerify();
+      // Check if this worker has been viewed before
+      const alreadyViewed = await hasAgencyViewedWorker(userProfile.uid, values.workerId);
 
-      toast({
-        title: "Verification Credit Used",
-        description: `Searching for references for worker ID: ${values.workerId}`,
-      });
+      if (alreadyViewed) {
+        // Free access - worker already viewed
+        toast({
+          title: "Previously Viewed Worker",
+          description: `Loading references for worker ID: ${values.workerId}. No credit charged.`,
+        });
+      } else {
+        // New worker - check credits and deduct
+        if (currentCredits <= 0) {
+          toast({
+            variant: "destructive",
+            title: "No Credits Remaining",
+            description: `Please purchase more credits to verify references.`,
+          });
+          setIsSubmitting(false);
+          return;
+        }
+
+        // Deduct credit for new worker
+        await onVerify();
+
+        toast({
+          title: "Verification Credit Used",
+          description: `Searching for references for worker ID: ${values.workerId}`,
+        });
+      }
 
       // Navigate to results
       router.push(`/agency/results/${values.workerId}`);
@@ -69,7 +94,7 @@ export function VerifyReferenceForm({ onVerify, currentCredits }: VerifyReferenc
       toast({
         variant: "destructive",
         title: "Verification Failed",
-        description: "Failed to deduct credit. Please try again.",
+        description: "Failed to process verification. Please try again.",
       });
     } finally {
       setIsSubmitting(false);

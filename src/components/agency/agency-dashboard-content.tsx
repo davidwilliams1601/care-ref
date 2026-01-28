@@ -3,6 +3,7 @@
 
 import * as React from "react";
 import { VerifyReferenceForm } from "@/components/agency/verify-reference-form";
+import { ViewedWorkersList } from "@/components/agency/viewed-workers-list";
 import {
   Card,
   CardContent,
@@ -119,6 +120,8 @@ export function AgencyDashboardContent() {
                 </Button>
             </CardContent>
         </Card>
+
+        <ViewedWorkersList />
     </div>
   );
 }

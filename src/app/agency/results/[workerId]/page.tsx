@@ -4,6 +4,8 @@
 import * as React from "react";
 import { Header } from "@/components/header";
 import { getWorkerReferences } from "@/app/actions/get-worker-references";
+import { recordWorkerView } from "@/app/actions/agency-viewed-workers";
+import { useAuth } from "@/contexts/AuthContext";
 import type { ReferenceRequest } from "@/types";
 import {
   Card,
@@ -28,6 +30,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function AgencyResultsPage({ params }: { params: { workerId: string }}) {
   const { workerId } = params;
+  const { userProfile } = useAuth();
   const [completedReferences, setCompletedReferences] = React.useState<ReferenceRequest[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -50,6 +53,19 @@ export default function AgencyResultsPage({ params }: { params: { workerId: stri
         })) as ReferenceRequest[];
 
         setCompletedReferences(referencesWithDates);
+
+        // Record this worker view for the agency
+        if (userProfile?.uid && result.references.length > 0) {
+          // Get worker name from first reference (employer name or use worker ID)
+          const workerName = `Worker ${workerId.substring(0, 8)}...`;
+
+          await recordWorkerView(
+            userProfile.uid,
+            workerId,
+            workerName,
+            result.references.length
+          );
+        }
       } else {
         setError(result.error || 'Failed to load references');
       }
@@ -58,7 +74,7 @@ export default function AgencyResultsPage({ params }: { params: { workerId: stri
     };
 
     fetchReferences();
-  }, [workerId]);
+  }, [workerId, userProfile?.uid]);
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
