@@ -11,6 +11,7 @@ import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
+import { Footer } from "@/components/footer";
 
 export default function WelcomePage() {
   const [year, setYear] = React.useState<number | null>(null);
@@ -178,11 +179,7 @@ export default function WelcomePage() {
         </section>
 
       </main>
-       <footer className="border-t py-6">
-        <div className="container mx-auto text-center text-sm text-muted-foreground">
-          &copy; {year || new Date().getFullYear()} RefVault. All rights reserved.
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FileText, Loader2, Mail } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { Separator } from "@/components/ui/separator";
@@ -29,6 +30,7 @@ export default function SignupPage() {
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [confirmPassword, setConfirmPassword] = React.useState('');
+  const [agreeToTerms, setAgreeToTerms] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const [googleLoading, setGoogleLoading] = React.useState(false);
 
@@ -59,6 +61,15 @@ export default function SignupPage() {
         variant: "destructive",
         title: "Passwords Don't Match",
         description: "Please make sure your passwords match.",
+      });
+      return;
+    }
+
+    if (!agreeToTerms) {
+      toast({
+        variant: "destructive",
+        title: "Terms Required",
+        description: "Please agree to the Terms of Service and Privacy Policy.",
       });
       return;
     }
@@ -214,8 +225,31 @@ export default function SignupPage() {
               />
             </div>
 
+            {/* Terms Agreement */}
+            <div className="flex items-start space-x-2">
+              <Checkbox
+                id="terms"
+                checked={agreeToTerms}
+                onCheckedChange={(checked) => setAgreeToTerms(checked as boolean)}
+                disabled={loading}
+              />
+              <label
+                htmlFor="terms"
+                className="text-sm text-muted-foreground leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                I agree to the{" "}
+                <Link href="/terms" className="text-primary underline hover:no-underline" target="_blank">
+                  Terms of Service
+                </Link>{" "}
+                and{" "}
+                <Link href="/privacy" className="text-primary underline hover:no-underline" target="_blank">
+                  Privacy Policy
+                </Link>
+              </label>
+            </div>
+
             {/* Submit Button */}
-            <Button type="submit" className="w-full" disabled={loading || googleLoading}>
+            <Button type="submit" className="w-full" disabled={loading || googleLoading || !agreeToTerms}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create Account
             </Button>
