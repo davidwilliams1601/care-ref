@@ -3,14 +3,13 @@
 
 import * as React from "react";
 import { Button } from "@/components/ui/button";
-import { FileText } from "lucide-react";
 import Link from "next/link";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
+import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 
 export default function WelcomePage() {
@@ -50,24 +49,7 @@ export default function WelcomePage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 md:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <Link href="/" className="flex items-center gap-2">
-              <FileText className="h-6 w-6 text-primary" />
-              <span className="text-xl font-bold tracking-tight">RefVault</span>
-            </Link>
-            <div className="flex items-center gap-4">
-               <Button variant="ghost" asChild>
-                <Link href="/login">Login</Link>
-              </Button>
-              <Button asChild>
-                <Link href="/signup">Sign Up</Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header />
       <main className="flex-1">
         <section className="container mx-auto py-20 md:py-24">
            <div className="grid grid-cols-1 gap-12 items-center">
