@@ -15,6 +15,7 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
+import { generateWorkerReferenceId } from '@/lib/generate-worker-id';
 
 type UserType = 'worker' | 'agency' | 'admin';
 
@@ -28,6 +29,7 @@ interface UserProfile {
   lastLogin: any;
   profileComplete: boolean;
   // Worker specific
+  workerReferenceId?: string; // Friendly ID like RV-482917
   jobTitle?: string;
   phoneNumber?: string;
   // Agency specific
@@ -88,7 +90,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     // Add type-specific fields
-    if (userType === 'agency') {
+    if (userType === 'worker') {
+      profile.workerReferenceId = generateWorkerReferenceId();
+    } else if (userType === 'agency') {
       profile.credits = 0;
     }
 

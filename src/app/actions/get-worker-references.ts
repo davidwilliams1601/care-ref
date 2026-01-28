@@ -3,9 +3,11 @@
 
 import { adminDb } from '@/lib/firebase-admin';
 import type { ReferenceRequest } from '@/types';
+import { isValidWorkerReferenceId } from '@/lib/generate-worker-id';
 
 /**
  * Fetch completed references for a specific worker
+ * Accepts either Firebase UID or friendly Worker Reference ID (RV-XXXXXX)
  * This is used by agencies to verify worker references
  */
 export async function getWorkerReferences(workerId: string): Promise<{
@@ -18,10 +20,31 @@ export async function getWorkerReferences(workerId: string): Promise<{
       return { success: false, references: [], error: 'Worker ID is required' };
     }
 
+    let actualWorkerId = workerId;
+
+    // If this is a friendly Worker Reference ID (RV-XXXXXX), look up the actual UID
+    if (isValidWorkerReferenceId(workerId)) {
+      const usersSnapshot = await adminDb
+        .collection('users')
+        .where('workerReferenceId', '==', workerId)
+        .limit(1)
+        .get();
+
+      if (usersSnapshot.empty) {
+        return {
+          success: false,
+          references: [],
+          error: 'Worker not found. Please check the Worker ID and try again.',
+        };
+      }
+
+      actualWorkerId = usersSnapshot.docs[0].id;
+    }
+
     // Reference to worker's requests sub-collection
     const requestsRef = adminDb
       .collection('users')
-      .doc(workerId)
+      .doc(actualWorkerId)
       .collection('requests');
 
     // Query for completed requests only

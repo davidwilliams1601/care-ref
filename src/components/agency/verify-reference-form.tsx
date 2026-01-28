@@ -109,10 +109,13 @@ export function VerifyReferenceForm({ onVerify, currentCredits }: VerifyReferenc
           name="workerId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Worker ID</FormLabel>
+              <FormLabel>Worker Reference ID</FormLabel>
               <FormControl>
-                <Input placeholder="e.g. worker-123" {...field} />
+                <Input placeholder="e.g. RV-482917" {...field} className="font-mono" />
               </FormControl>
+              <p className="text-xs text-muted-foreground mt-1">
+                Enter the 6-digit Worker ID provided by the care worker (format: RV-XXXXXX)
+              </p>
               <FormMessage />
             </FormItem>
           )}

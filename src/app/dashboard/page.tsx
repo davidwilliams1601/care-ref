@@ -8,6 +8,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Header } from "@/components/header";
+import { WorkerIdCard } from "@/components/worker-id-card";
 import type { Reference, ReferenceRequest } from "@/types";
 import { ReferenceList } from "@/components/dashboard/reference-list";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -82,6 +83,15 @@ export default function WorkerDashboard() {
             </Link>
           </Button>
         </div>
+
+        {userProfile?.workerReferenceId && (
+          <div className="mb-6">
+            <WorkerIdCard
+              workerReferenceId={userProfile.workerReferenceId}
+              displayName={userProfile.displayName}
+            />
+          </div>
+        )}
 
         {error && (
           <Alert variant="destructive" className="mb-6">

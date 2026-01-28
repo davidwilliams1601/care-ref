@@ -3,6 +3,7 @@
 
 import { adminDb } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
+import { isValidWorkerReferenceId } from '@/lib/generate-worker-id';
 
 export interface ViewedWorker {
   workerId: string;
@@ -15,17 +16,35 @@ export interface ViewedWorker {
 
 /**
  * Check if an agency has already viewed a specific worker
+ * Accepts either Firebase UID or friendly Worker Reference ID (RV-XXXXXX)
  */
 export async function hasAgencyViewedWorker(
   agencyId: string,
   workerId: string
 ): Promise<boolean> {
   try {
+    let actualWorkerId = workerId;
+
+    // If this is a friendly Worker Reference ID, look up the actual UID
+    if (isValidWorkerReferenceId(workerId)) {
+      const usersSnapshot = await adminDb
+        .collection('users')
+        .where('workerReferenceId', '==', workerId)
+        .limit(1)
+        .get();
+
+      if (usersSnapshot.empty) {
+        return false; // Worker not found
+      }
+
+      actualWorkerId = usersSnapshot.docs[0].id;
+    }
+
     const viewedRef = adminDb
       .collection('users')
       .doc(agencyId)
       .collection('viewedWorkers')
-      .doc(workerId);
+      .doc(actualWorkerId);
 
     const doc = await viewedRef.get();
     return doc.exists;
@@ -37,6 +56,7 @@ export async function hasAgencyViewedWorker(
 
 /**
  * Record that an agency has viewed a worker's references
+ * Accepts either Firebase UID or friendly Worker Reference ID (RV-XXXXXX)
  */
 export async function recordWorkerView(
   agencyId: string,
@@ -45,11 +65,31 @@ export async function recordWorkerView(
   referenceCount: number
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    let actualWorkerId = workerId;
+
+    // If this is a friendly Worker Reference ID, look up the actual UID
+    if (isValidWorkerReferenceId(workerId)) {
+      const usersSnapshot = await adminDb
+        .collection('users')
+        .where('workerReferenceId', '==', workerId)
+        .limit(1)
+        .get();
+
+      if (usersSnapshot.empty) {
+        return {
+          success: false,
+          error: 'Worker not found',
+        };
+      }
+
+      actualWorkerId = usersSnapshot.docs[0].id;
+    }
+
     const viewedRef = adminDb
       .collection('users')
       .doc(agencyId)
       .collection('viewedWorkers')
-      .doc(workerId);
+      .doc(actualWorkerId);
 
     const doc = await viewedRef.get();
 
