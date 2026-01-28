@@ -29,9 +29,11 @@ import {
   Eye,
   RefreshCw,
   AlertCircle,
+  Shield,
 } from "lucide-react";
 import {
   isAdmin,
+  isSuperAdmin,
   getAdminDashboardStats,
   getAdminUsers,
   searchUser,
@@ -39,6 +41,8 @@ import {
   getRecentReferences,
   getPaymentHistory,
   getAgencyInsights,
+  grantAdminAccess,
+  revokeAdminAccess,
 } from "@/app/actions/admin-actions";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -50,11 +54,14 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AdminDashboardPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
   const [isAdminUser, setIsAdminUser] = React.useState(false);
+  const [isSuperAdminUser, setIsSuperAdminUser] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
   const [stats, setStats] = React.useState<any>(null);
   const [users, setUsers] = React.useState<any[]>([]);
@@ -67,6 +74,7 @@ export default function AdminDashboardPage() {
   const [creditAdjustment, setCreditAdjustment] = React.useState("");
   const [adjustmentReason, setAdjustmentReason] = React.useState("");
   const [refreshing, setRefreshing] = React.useState(false);
+  const [togglingAdmin, setTogglingAdmin] = React.useState<string | null>(null);
 
   // Check admin access
   React.useEffect(() => {
@@ -85,6 +93,11 @@ export default function AdminDashboardPage() {
       }
 
       setIsAdminUser(true);
+
+      // Check if super admin
+      const superAdminCheck = await isSuperAdmin(user.email);
+      setIsSuperAdminUser(superAdminCheck);
+
       loadDashboardData();
     }
 
@@ -159,6 +172,43 @@ export default function AdminDashboardPage() {
     setRefreshing(true);
     await loadDashboardData();
     setRefreshing(false);
+  }
+
+  async function handleToggleAdminAccess(userId: string, currentIsAdmin: boolean) {
+    if (!isSuperAdminUser) {
+      alert('Only super admins can manage admin access');
+      return;
+    }
+
+    const confirmMessage = currentIsAdmin
+      ? 'Are you sure you want to revoke admin access from this user?'
+      : 'Are you sure you want to grant admin access to this user?';
+
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    setTogglingAdmin(userId);
+
+    const result = currentIsAdmin
+      ? await revokeAdminAccess(userId, user?.email || '')
+      : await grantAdminAccess(userId, user?.email || '');
+
+    if (result.success) {
+      toast({
+        title: "Success",
+        description: result.message,
+      });
+      await loadDashboardData();
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: result.error,
+      });
+    }
+
+    setTogglingAdmin(null);
   }
 
   if (authLoading || loading) {
@@ -369,7 +419,9 @@ export default function AdminDashboardPage() {
                       <TableHead>Type</TableHead>
                       <TableHead>Credits</TableHead>
                       <TableHead>Worker ID</TableHead>
+                      <TableHead>Admin</TableHead>
                       <TableHead>Joined</TableHead>
+                      {isSuperAdminUser && <TableHead>Actions</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -388,11 +440,39 @@ export default function AdminDashboardPage() {
                         <TableCell className="text-sm">
                           {user.workerReferenceId || '-'}
                         </TableCell>
+                        <TableCell>
+                          {user.isAdmin ? (
+                            <Badge variant="default">
+                              <Shield className="h-3 w-3 mr-1" />
+                              Admin
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">-</span>
+                          )}
+                        </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {user.createdAt
                             ? new Date(user.createdAt).toLocaleDateString()
                             : '-'}
                         </TableCell>
+                        {isSuperAdminUser && (
+                          <TableCell>
+                            <Button
+                              size="sm"
+                              variant={user.isAdmin ? 'destructive' : 'default'}
+                              onClick={() => handleToggleAdminAccess(user.id, user.isAdmin)}
+                              disabled={togglingAdmin === user.id}
+                            >
+                              {togglingAdmin === user.id ? (
+                                <RefreshCw className="h-3 w-3 animate-spin" />
+                              ) : user.isAdmin ? (
+                                'Revoke Admin'
+                              ) : (
+                                'Grant Admin'
+                              )}
+                            </Button>
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))}
                   </TableBody>

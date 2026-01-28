@@ -4,11 +4,39 @@ import { adminDb } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 
 // Admin emails - only these users can access admin panel
+// These are super admins who can grant admin access to others
 const ADMIN_EMAILS = [
   'david@theentrepreneurialdad.com',
 ];
 
 export async function isAdmin(email: string | null | undefined): Promise<boolean> {
+  if (!email) return false;
+
+  // Check if user is a super admin (hardcoded)
+  if (ADMIN_EMAILS.includes(email.toLowerCase())) {
+    return true;
+  }
+
+  // Check if user has admin flag in Firestore
+  try {
+    const usersSnapshot = await adminDb
+      .collection('users')
+      .where('email', '==', email.toLowerCase())
+      .limit(1)
+      .get();
+
+    if (!usersSnapshot.empty) {
+      const userData = usersSnapshot.docs[0].data();
+      return userData.isAdmin === true;
+    }
+  } catch (error) {
+    console.error('Error checking admin status:', error);
+  }
+
+  return false;
+}
+
+export async function isSuperAdmin(email: string | null | undefined): Promise<boolean> {
   if (!email) return false;
   return ADMIN_EMAILS.includes(email.toLowerCase());
 }
@@ -128,6 +156,7 @@ export async function getAdminUsers(
         credits: data.credits || 0,
         creditsUsed: data.creditsUsed || 0,
         workerReferenceId: data.workerReferenceId || null,
+        isAdmin: data.isAdmin || false,
         createdAt: data.createdAt?.toDate().toISOString() || null,
         lastLoginAt: data.lastLoginAt?.toDate().toISOString() || null,
       };
@@ -412,6 +441,109 @@ export async function getAgencyInsights(limit: number = 20) {
       success: false,
       insights: [],
       error: 'Failed to fetch agency insights',
+    };
+  }
+}
+
+// Grant admin access to a user
+export async function grantAdminAccess(
+  userId: string,
+  adminEmail: string
+): Promise<{ success: boolean; message?: string; error?: string }> {
+  try {
+    // Check if requesting user is a super admin
+    const isSuperAdminUser = await isSuperAdmin(adminEmail);
+    if (!isSuperAdminUser) {
+      return {
+        success: false,
+        error: 'Only super admins can grant admin access',
+      };
+    }
+
+    const userRef = adminDb.collection('users').doc(userId);
+    const userDoc = await userRef.get();
+
+    if (!userDoc.exists) {
+      return { success: false, error: 'User not found' };
+    }
+
+    await userRef.update({
+      isAdmin: true,
+    });
+
+    // Log the action
+    await userRef.collection('adminAccessLog').add({
+      action: 'granted',
+      grantedBy: adminEmail,
+      timestamp: FieldValue.serverTimestamp(),
+    });
+
+    return {
+      success: true,
+      message: 'Admin access granted successfully',
+    };
+  } catch (error) {
+    console.error('Error granting admin access:', error);
+    return {
+      success: false,
+      error: 'Failed to grant admin access',
+    };
+  }
+}
+
+// Revoke admin access from a user
+export async function revokeAdminAccess(
+  userId: string,
+  adminEmail: string
+): Promise<{ success: boolean; message?: string; error?: string }> {
+  try {
+    // Check if requesting user is a super admin
+    const isSuperAdminUser = await isSuperAdmin(adminEmail);
+    if (!isSuperAdminUser) {
+      return {
+        success: false,
+        error: 'Only super admins can revoke admin access',
+      };
+    }
+
+    // Prevent revoking access from super admins
+    const userRef = adminDb.collection('users').doc(userId);
+    const userDoc = await userRef.get();
+
+    if (!userDoc.exists) {
+      return { success: false, error: 'User not found' };
+    }
+
+    const userData = userDoc.data();
+    const userEmail = userData?.email;
+
+    if (userEmail && ADMIN_EMAILS.includes(userEmail.toLowerCase())) {
+      return {
+        success: false,
+        error: 'Cannot revoke access from super admins',
+      };
+    }
+
+    await userRef.update({
+      isAdmin: false,
+    });
+
+    // Log the action
+    await userRef.collection('adminAccessLog').add({
+      action: 'revoked',
+      revokedBy: adminEmail,
+      timestamp: FieldValue.serverTimestamp(),
+    });
+
+    return {
+      success: true,
+      message: 'Admin access revoked successfully',
+    };
+  } catch (error) {
+    console.error('Error revoking admin access:', error);
+    return {
+      success: false,
+      error: 'Failed to revoke admin access',
     };
   }
 }

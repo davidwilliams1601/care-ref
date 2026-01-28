@@ -1,11 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { FileText, LogOut, User, Menu, X } from "lucide-react";
+import { FileText, LogOut, User, Menu, X, Shield } from "lucide-react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import { isAdmin } from "@/app/actions/admin-actions";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,6 +37,20 @@ export function Header() {
   const pathname = usePathname();
   const { toast } = useToast();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const [isAdminUser, setIsAdminUser] = React.useState(false);
+
+  // Check if user is admin
+  React.useEffect(() => {
+    async function checkAdminStatus() {
+      if (user?.email) {
+        const adminStatus = await isAdmin(user.email);
+        setIsAdminUser(adminStatus);
+      } else {
+        setIsAdminUser(false);
+      }
+    }
+    checkAdminStatus();
+  }, [user]);
 
   const handleSignOut = async () => {
     try {
@@ -131,6 +146,14 @@ export function Header() {
                       <span>Dashboard</span>
                     </Link>
                   </DropdownMenuItem>
+                  {isAdminUser && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin/dashboard" className="cursor-pointer">
+                        <Shield className="mr-2 h-4 w-4" />
+                        <span>Admin Dashboard</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-red-600">
                     <LogOut className="mr-2 h-4 w-4" />
@@ -207,6 +230,19 @@ export function Header() {
                         Dashboard
                       </Link>
                     </Button>
+                    {isAdminUser && (
+                      <Button
+                        asChild
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <Link href="/admin/dashboard">
+                          <Shield className="mr-2 h-4 w-4" />
+                          Admin Dashboard
+                        </Link>
+                      </Button>
+                    )}
                     <Button
                       onClick={() => {
                         handleSignOut();
