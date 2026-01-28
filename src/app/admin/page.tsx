@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Database, Search } from "lucide-react";
+import { ArrowRight, Database, Search, Mail } from "lucide-react";
 import Link from "next/link";
 
 export default function AdminPage() {
@@ -18,7 +18,7 @@ export default function AdminPage() {
             </p>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
@@ -72,6 +72,36 @@ export default function AdminPage() {
                   <Button asChild variant="outline" className="w-full">
                     <Link href="/admin/verify-worker-id">
                       Test Verification
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Mail className="h-5 w-5" />
+                  <CardTitle>Email Testing</CardTitle>
+                </div>
+                <CardDescription>
+                  Send a test email to verify Resend configuration is working.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="text-sm text-muted-foreground">
+                    <p>This tool will:</p>
+                    <ul className="list-disc list-inside mt-1 space-y-1">
+                      <li>Test outgoing email delivery</li>
+                      <li>Verify Resend API configuration</li>
+                      <li>Confirm domain verification</li>
+                    </ul>
+                  </div>
+                  <Button asChild variant="outline" className="w-full">
+                    <Link href="/admin/test-email">
+                      Send Test Email
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>
