@@ -4,6 +4,7 @@
 import { z } from 'zod';
 import { adminDb } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
+import { sendReferenceCompletionNotification } from './send-reference-notification';
 
 const submitReferenceSchema = z.object({
   requestId: z.string(),
@@ -55,6 +56,24 @@ export async function submitReference(
 
     // Update the request document
     await requestRef.update(updateData);
+
+    // Send notification email to worker
+    try {
+      const userDoc = await adminDb.collection('users').doc(validatedData.workerId).get();
+      const userData = userDoc.data();
+
+      if (userData?.email && userData?.displayName) {
+        await sendReferenceCompletionNotification({
+          workerEmail: userData.email,
+          workerName: userData.displayName,
+          employerName: existingData?.employerName || 'your former employer',
+          jobTitle: existingData?.jobTitle || 'your previous role',
+        });
+      }
+    } catch (emailError) {
+      // Log but don't fail the reference submission if email fails
+      console.error('Failed to send completion notification:', emailError);
+    }
 
     return { success: true, message: 'Reference submitted successfully.' };
   } catch (error) {

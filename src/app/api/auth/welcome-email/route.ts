@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
 
     try {
       const { data, error } = await resend.emails.send({
-        from: 'RefVault <onboarding@resend.dev>', // Update this with your verified domain
+        from: 'RefVault <noreply@refvault.co.uk>',
         to: [email],
         subject: 'Welcome to RefVault! 🎉',
         html: `
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
                 </div>
 
                 <p style="font-size: 14px; color: #6b7280; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-                  Need help? Contact us at <a href="mailto:support@refvault.com" style="color: #667eea;">support@refvault.com</a>
+                  Need help? Contact us at <a href="mailto:support@refvault.co.uk" style="color: #667eea; text-decoration: none;">support@refvault.co.uk</a>
                 </p>
               </div>
 
