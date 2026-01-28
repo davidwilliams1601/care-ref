@@ -84,8 +84,8 @@ export default function SignupPage() {
         description: "Please check your email to verify your account.",
       });
 
-      // Redirect to dashboard
-      router.push("/dashboard");
+      // Redirect will be handled by home page based on user type
+      router.push("/");
     } catch (error: any) {
       console.error('Signup error:', error);
       toast({
@@ -109,7 +109,8 @@ export default function SignupPage() {
         description: "Your account has been created successfully.",
       });
 
-      router.push("/dashboard");
+      // Redirect will be handled by home page based on user type
+      router.push("/");
     } catch (error: any) {
       console.error('Google signup error:', error);
       toast({

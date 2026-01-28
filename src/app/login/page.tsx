@@ -53,7 +53,8 @@ export default function LoginPage() {
         description: "You've successfully logged in.",
       });
 
-      router.push("/dashboard");
+      // Redirect will be handled by home page based on user type
+      router.push("/");
     } catch (error: any) {
       console.error('Login error:', error);
 
@@ -90,7 +91,8 @@ export default function LoginPage() {
         description: "You've successfully logged in with Google.",
       });
 
-      router.push("/dashboard");
+      // Redirect will be handled by home page based on user type
+      router.push("/");
     } catch (error: any) {
       console.error('Google login error:', error);
       toast({
