@@ -5,7 +5,7 @@ import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Search } from "lucide-react";
+import { Search, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
@@ -25,13 +25,14 @@ const formSchema = z.object({
 });
 
 interface VerifyReferenceFormProps {
-  onVerify: () => void;
-  currentTokens: number;
+  onVerify: () => Promise<void>;
+  currentCredits: number;
 }
 
-export function VerifyReferenceForm({ onVerify, currentTokens }: VerifyReferenceFormProps) {
+export function VerifyReferenceForm({ onVerify, currentCredits }: VerifyReferenceFormProps) {
   const { toast } = useToast();
   const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -40,8 +41,8 @@ export function VerifyReferenceForm({ onVerify, currentTokens }: VerifyReference
     },
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    if (currentTokens <= 0) {
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    if (currentCredits <= 0) {
       toast({
         variant: "destructive",
         title: "No Credits Remaining",
@@ -50,13 +51,29 @@ export function VerifyReferenceForm({ onVerify, currentTokens }: VerifyReference
       return;
     }
 
-    onVerify();
-    
-    toast({
-      title: "Verification Credit Used",
-      description: `Searching for references for worker ID: ${values.workerId}`,
-    });
-    router.push(`/agency/results/${values.workerId}`);
+    setIsSubmitting(true);
+
+    try {
+      // Deduct credit
+      await onVerify();
+
+      toast({
+        title: "Verification Credit Used",
+        description: `Searching for references for worker ID: ${values.workerId}`,
+      });
+
+      // Navigate to results
+      router.push(`/agency/results/${values.workerId}`);
+    } catch (error) {
+      console.error('Verification failed:', error);
+      toast({
+        variant: "destructive",
+        title: "Verification Failed",
+        description: "Failed to deduct credit. Please try again.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -75,8 +92,12 @@ export function VerifyReferenceForm({ onVerify, currentTokens }: VerifyReference
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full" disabled={currentTokens <= 0}>
-          <Search className="mr-2 h-4 w-4" />
+        <Button type="submit" className="w-full" disabled={currentCredits <= 0 || isSubmitting}>
+          {isSubmitting ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Search className="mr-2 h-4 w-4" />
+          )}
           Verify References (1 Credit)
         </Button>
       </form>

@@ -1,8 +1,10 @@
 
 "use client";
 
+import * as React from "react";
 import { Header } from "@/components/header";
-import { mockRequests } from "@/lib/mock-data";
+import { getWorkerReferences } from "@/app/actions/get-worker-references";
+import type { ReferenceRequest } from "@/types";
 import {
   Card,
   CardContent,
@@ -18,17 +20,45 @@ import {
 } from "@/components/ui/accordion"
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function AgencyResultsPage({ params }: { params: { workerId: string }}) {
   const { workerId } = params;
-  // In a real app, you'd fetch the request details from your backend using the ID.
-  // We only show completed references to the agency.
-  const completedReferences = mockRequests.filter(
-    (r) => r.workerId === workerId && r.status === 'Completed'
-  );
+  const [completedReferences, setCompletedReferences] = React.useState<ReferenceRequest[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    const fetchReferences = async () => {
+      setLoading(true);
+      setError(null);
+
+      const result = await getWorkerReferences(workerId);
+
+      if (result.success) {
+        // Convert ISO date strings back to Date objects for display
+        const referencesWithDates = result.references.map(ref => ({
+          ...ref,
+          dateRequested: new Date(ref.dateRequested),
+          dateCompleted: ref.dateCompleted ? new Date(ref.dateCompleted) : null,
+          startDate: ref.startDate ? new Date(ref.startDate) : undefined,
+          endDate: ref.endDate ? new Date(ref.endDate) : undefined,
+        })) as ReferenceRequest[];
+
+        setCompletedReferences(referencesWithDates);
+      } else {
+        setError(result.error || 'Failed to load references');
+      }
+
+      setLoading(false);
+    };
+
+    fetchReferences();
+  }, [workerId]);
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -42,15 +72,35 @@ export default function AgencyResultsPage({ params }: { params: { workerId: stri
             </Link>
           </Button>
 
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
           <Card>
             <CardHeader>
               <CardTitle>Verification Results</CardTitle>
               <CardDescription>
-                Showing {completedReferences.length} completed reference(s) for Worker ID: <span className="font-semibold">{workerId}</span>.
+                {loading ? (
+                  <Skeleton className="h-4 w-64" />
+                ) : (
+                  <>
+                    Showing {completedReferences.length} completed reference(s) for Worker ID: <span className="font-semibold">{workerId}</span>.
+                  </>
+                )}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {completedReferences.length > 0 ? (
+              {loading ? (
+                <div className="space-y-4">
+                  <Skeleton className="h-16 w-full" />
+                  <Skeleton className="h-16 w-full" />
+                  <Skeleton className="h-16 w-full" />
+                </div>
+              ) : completedReferences.length > 0 ? (
                 <Accordion type="single" collapsible className="w-full">
                   {completedReferences.map((ref, index) => (
                     <AccordionItem value={`item-${index}`} key={ref.id}>
@@ -65,7 +115,7 @@ export default function AgencyResultsPage({ params }: { params: { workerId: stri
                             <div>
                                 <h4 className="font-semibold text-sm mb-1">Employment Dates</h4>
                                 <p className="text-sm text-muted-foreground">
-                                    {format(ref.dateRequested, "MMM yyyy")} - {ref.dateCompleted ? format(ref.dateCompleted, "MMM yyyy") : 'Present'}
+                                    {ref.startDate && format(ref.startDate, "MMM yyyy")} - {ref.endDate ? format(ref.endDate, "MMM yyyy") : 'Present'}
                                 </p>
                             </div>
                              <div>
@@ -75,7 +125,7 @@ export default function AgencyResultsPage({ params }: { params: { workerId: stri
                                 </p>
                             </div>
                             <div>
-                                <h4 className="font-semibold text-sm mb-1">AI Summary</h4>
+                                <h4 className="font-semibold text-sm mb-1">Summary</h4>
                                 <p className="text-sm text-muted-foreground whitespace-pre-line bg-muted p-3 rounded-md">
                                     {ref.summary || "No summary available."}
                                 </p>

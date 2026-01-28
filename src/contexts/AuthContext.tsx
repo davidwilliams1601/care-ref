@@ -128,11 +128,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await sendEmailVerification(result.user);
 
       // Send welcome email via server action
-      await fetch('/api/auth/welcome-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, displayName, userType }),
-      });
+      try {
+        const emailResponse = await fetch('/api/auth/welcome-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, displayName, userType }),
+        });
+
+        const emailResult = await emailResponse.json();
+
+        if (!emailResponse.ok) {
+          console.error('Welcome email failed:', emailResult.error);
+        } else {
+          console.log('Welcome email sent successfully:', emailResult.message || 'Success');
+        }
+      } catch (emailError) {
+        console.error('Failed to send welcome email:', emailError);
+        // Don't throw - allow signup to complete even if email fails
+      }
     } catch (error: any) {
       console.error('Sign up error:', error);
       throw new Error(error.message || 'Failed to sign up');
@@ -169,15 +182,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         );
 
         // Send welcome email
-        await fetch('/api/auth/welcome-email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: result.user.email,
-            displayName: result.user.displayName,
-            userType,
-          }),
-        });
+        try {
+          const emailResponse = await fetch('/api/auth/welcome-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: result.user.email,
+              displayName: result.user.displayName,
+              userType,
+            }),
+          });
+
+          const emailResult = await emailResponse.json();
+
+          if (!emailResponse.ok) {
+            console.error('Welcome email failed:', emailResult.error);
+          } else {
+            console.log('Welcome email sent successfully:', emailResult.message || 'Success');
+          }
+        } catch (emailError) {
+          console.error('Failed to send welcome email:', emailError);
+          // Don't throw - allow signup to complete even if email fails
+        }
       } else {
         // Existing user - update last login
         await updateLastLogin(result.user.uid);

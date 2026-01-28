@@ -81,7 +81,7 @@ git push -u origin main
 Before deploying, add these environment variables in Vercel:
 
 **Required Variables:**
-- `RESEND_API_KEY` - Your Resend API key
+- `RESEND_API_KEY` - Your Resend API key (OPTIONAL: Leave blank until you have a custom domain - see Step 7 below)
 - `GOOGLE_GENAI_API_KEY` - Your Google AI API key
 - `NEXT_PUBLIC_BASE_URL` - Will be `https://your-app.vercel.app` (update after first deploy)
 
@@ -169,6 +169,69 @@ Vercel automatically deploys:
 - **Preview**: Every pull request
 
 You can configure this in Project Settings → Git
+
+## Step 7: Set Up Welcome Emails with Custom Domain
+
+**NOTE**: Welcome emails are currently disabled in development. Follow these steps when you're ready to enable them with your custom domain.
+
+### Why Custom Domain is Required
+Resend requires a verified domain to send emails. Free Vercel domains (*.vercel.app) cannot be verified, so you need your own domain.
+
+### Setup Steps
+
+1. **Purchase a Domain**
+   - Get a domain from any registrar (Namecheap, GoDaddy, Google Domains, etc.)
+   - Example: `refvault.com`
+
+2. **Add Domain to Resend**
+   - Go to https://resend.com/domains
+   - Click "Add Domain"
+   - Enter your domain (e.g., `refvault.com`)
+   - Copy the DNS records provided
+
+3. **Configure DNS Records**
+   - Go to your domain registrar's DNS settings
+   - Add the TXT and MX records provided by Resend
+   - Wait for DNS propagation (can take up to 48 hours, usually much faster)
+
+4. **Verify Domain in Resend**
+   - Return to Resend dashboard
+   - Click "Verify" on your domain
+   - Once verified, you'll see a green checkmark
+
+5. **Update Email Sender**
+   - Edit `src/app/api/auth/welcome-email/route.ts` line 31
+   - Change from: `'RefVault <onboarding@resend.dev>'`
+   - To: `'RefVault <noreply@yourdomain.com>'`
+   - Or use any email like: `welcome@yourdomain.com`, `hello@yourdomain.com`, etc.
+
+6. **Enable Resend API Key**
+   - In Vercel, add environment variable: `RESEND_API_KEY=re_xxxxxxxxxxxxx`
+   - Or in local `.env`, uncomment: `RESEND_API_KEY=re_xxxxxxxxxxxxx`
+   - Redeploy or restart dev server
+
+7. **Test Email Sending**
+   - Create a new test account
+   - Check the user's inbox for the welcome email
+   - Check Vercel logs or browser console for any errors
+
+### Example DNS Records (Resend)
+```
+Type: TXT
+Name: resend._domainkey
+Value: [provided by Resend]
+
+Type: MX
+Name: @
+Value: feedback-smtp.us-east-1.amazonses.com
+Priority: 10
+```
+
+### Current Status
+- ✅ Email functionality is built and ready
+- ⏸️ Emails are disabled (no `RESEND_API_KEY` set)
+- ✅ Signup works without emails (gracefully skips email sending)
+- 📧 When ready: Follow steps above to enable with your custom domain
 
 ## Troubleshooting
 
