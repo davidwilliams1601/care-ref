@@ -111,11 +111,11 @@ export function AgencyDashboardContent() {
             <CardContent className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
                 <div>
                     <h3 className="font-semibold">Purchase More Credits</h3>
-                    <p className="text-sm text-muted-foreground">Each credit costs £20 and allows one worker verification.</p>
+                    <p className="text-sm text-muted-foreground">Buy credits to verify worker references. Save more with bulk packages.</p>
                 </div>
                 <Button onClick={handlePurchase}>
                     <CreditCard className="mr-2"/>
-                    Purchase 1 Credit
+                    Purchase Credits
                 </Button>
             </CardContent>
         </Card>

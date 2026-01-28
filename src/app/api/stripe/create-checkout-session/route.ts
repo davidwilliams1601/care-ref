@@ -13,7 +13,7 @@ function getStripe() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId, userEmail } = await req.json();
+    const { userId, userEmail, quantity = 1, priceInPence = 2000 } = await req.json();
 
     if (!userId || !userEmail) {
       return NextResponse.json(
@@ -22,7 +22,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Validate quantity
+    if (quantity < 1 || quantity > 100) {
+      return NextResponse.json(
+        { error: 'Invalid quantity. Must be between 1 and 100.' },
+        { status: 400 }
+      );
+    }
+
+    // Validate price (basic sanity check)
+    if (priceInPence < 1000 || priceInPence > 1000000) {
+      return NextResponse.json(
+        { error: 'Invalid price' },
+        { status: 400 }
+      );
+    }
+
     const stripe = getStripe();
+
+    const creditLabel = quantity === 1 ? 'Credit' : 'Credits';
+    const pricePerCredit = Math.round(priceInPence / quantity / 100);
 
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
@@ -32,10 +51,10 @@ export async function POST(req: NextRequest) {
           price_data: {
             currency: 'gbp',
             product_data: {
-              name: 'Verification Credit',
-              description: 'One credit to verify a care worker\'s references',
+              name: `${quantity} Verification ${creditLabel}`,
+              description: `${quantity} credit${quantity > 1 ? 's' : ''} to verify care worker references (£${pricePerCredit} per credit)`,
             },
-            unit_amount: 2000, // £20.00 in pence
+            unit_amount: priceInPence,
           },
           quantity: 1,
         },
@@ -46,7 +65,7 @@ export async function POST(req: NextRequest) {
       customer_email: userEmail,
       metadata: {
         userId,
-        creditAmount: '1',
+        creditAmount: quantity.toString(),
       },
     });
 
